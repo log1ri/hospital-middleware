@@ -1,16 +1,58 @@
 services:
+  app:
+    build:
+      context: .
+      args:
+        CMD: api
+    env_file: .env
+    # Values here win over env_file. Both hosts are reached by service name
+    # inside the compose network, not over the host's loopback.
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-staff}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-hospital}
+      HOSPITAL_A_BASE_URL: http://his-a-dummy:8081
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:${APP_PORT:-8080}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      his-a-dummy:
+        condition: service_started
+    healthcheck:
+      # $$ escapes compose interpolation, so the port comes from the container's
+      # own APP_PORT and cannot drift from the published port above.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:$${APP_PORT:-8080}/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # Stand-in for Hospital A's HIS, built from this repo's cmd/his-a-dummy.
+  # Only app talks to it, so it is not published to the host.
+  his-a-dummy:
+    build:
+      context: .
+      args:
+        CMD: his-a-dummy
+    environment:
+      HIS_A_ADDR: 0.0.0.0:8081
+    expose:
+      - "8081"
+    restart: unless-stopped
+
   postgres:
     image: postgres:18-alpine
     environment:
-      POSTGRES_USER: staff
+      POSTGRES_USER: ${POSTGRES_USER:-staff}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      POSTGRES_DB: hospital
+      POSTGRES_DB: ${POSTGRES_DB:-hospital}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U staff -d hospital"]
+      # $$ escapes compose interpolation, so these resolve from the container's
+      # own environment and cannot drift from POSTGRES_USER/POSTGRES_DB above.
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 3s
       timeout: 3s
       retries: 20
