@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -53,7 +54,9 @@ func (h *PatientHandler) Search(c *gin.Context) {
 	case errors.Is(err, services.ErrPatientNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": "patient not found"})
 	case errors.Is(err, services.ErrUnsupportedHospital):
-		c.JSON(http.StatusBadRequest, gin.H{"error": "unsupported hospital"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("unsupported hospital %q: only %q has a connected HIS", hospitalName, services.HospitalA),
+		})
 	case errors.Is(err, services.ErrPatientStore):
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "patient storage failed"})
 	case err != nil:

@@ -24,7 +24,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("Configuration loaded successfully")
+	log.Printf("Configuration loaded successfully (%s)", cfg.AppEnv)
+
+	// Set explicitly rather than leaving it to Gin's own GIN_MODE lookup: that
+	// runs in a package init(), before godotenv has read .env, so a value set
+	// only in the file would be missed.
+	if cfg.AppEnv == config.EnvDevelopment {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
 
 	// Initialize the database
 	database, err := db.Init(cfg.DatabaseURL)
@@ -60,7 +69,7 @@ func main() {
 	routes.SetupRoutes(r, staffHandler, patientHandler, jwtUtil)
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + cfg.AppPort,
 		Handler: r,
 	}
 

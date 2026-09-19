@@ -80,7 +80,7 @@ func TestPatientSearch(t *testing.T) {
 		{name: "no ID and DB miss returns an empty list", hospital: "A", path: "/patient/search?first_name=Nobody", wantStatus: 200, wantBody: `[]`, wantDBCalls: 1},
 		{name: "no filters at all returns an empty list", hospital: "A", path: "/patient/search", wantStatus: 200, wantBody: `[]`, wantDBCalls: 1},
 		{name: "HIS not found", hospital: "A", path: "/patient/search?national_id=123", upstreamStatus: 404, wantHISPath: "/patient/search/123", wantStatus: 404, wantBody: `{"error":"patient not found"}`, wantDBCalls: 1, wantHISCalls: 1},
-		{name: "unsupported hospital", hospital: "B", path: "/patient/search?national_id=123&hospital=A", wantStatus: 400, wantBody: `{"error":"unsupported hospital"}`},
+		{name: "unsupported hospital", hospital: "B", path: "/patient/search?national_id=123&hospital=A", wantStatus: 400, wantBody: `{"error":"unsupported hospital \"B\": only \"A\" has a connected HIS"}`},
 		{name: "upstream failure", hospital: "A", path: "/patient/search?national_id=123", upstreamStatus: 503, wantHISPath: "/patient/search/123", wantStatus: 502, wantBody: `{"error":"Hospital HIS unavailable"}`, wantDBCalls: 1, wantHISCalls: 1},
 		{name: "network failure", hospital: "A", path: "/patient/search?national_id=123", upstreamError: errors.New("connection failed"), wantHISPath: "/patient/search/123", wantStatus: 502, wantBody: `{"error":"Hospital HIS unavailable"}`, wantDBCalls: 1, wantHISCalls: 1},
 		{name: "HIS returns a different patient", hospital: "A", path: "/patient/search?national_id=123", upstreamStatus: 200, upstreamBody: `{"patient_hn":"A0001","national_id":"999"}`, wantHISPath: "/patient/search/123", wantStatus: 502, wantBody: `{"error":"Hospital HIS unavailable"}`, wantDBCalls: 1, wantHISCalls: 1},

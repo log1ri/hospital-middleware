@@ -12,6 +12,10 @@ import (
 	"hospital-middleware/internal/models"
 )
 
+// HospitalA is the only hospital with a connected HIS. Staff of other hospitals
+// can still register and log in, per the assignment, but have nothing to search.
+const HospitalA = "A"
+
 var ErrPatientNotFound = clients.ErrPatientNotFound
 var ErrUnsupportedHospital = errors.New("unsupported hospital")
 var ErrPatientStore = errors.New("patient storage failed")
@@ -33,7 +37,7 @@ type PatientService struct {
 
 func (s *PatientService) Search(ctx context.Context, hospital string, filters models.PatientFilters) ([]models.Patient, error) {
 	// Currently, we only support searching patients from Hospital A.
-	if hospital != "A" {
+	if hospital != HospitalA {
 		return nil, ErrUnsupportedHospital
 	}
 

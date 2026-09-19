@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 )
 
 // patient mirrors the Hospital A response contract from the assignment PDF.
@@ -57,8 +58,15 @@ func byID() map[string]patient {
 }
 
 func main() {
-	log.Printf("Dummy Hospital A HIS listening on 127.0.0.1:8081 with %d patients", len(patients))
-	log.Fatal(http.ListenAndServe("127.0.0.1:8081", newHandler()))
+	// Loopback by default, so `make run-dummy-his` does not expose the stand-in
+	// HIS to the local network. In compose it binds 0.0.0.0 so app can reach it.
+	addr := os.Getenv("HIS_A_ADDR")
+	if addr == "" {
+		addr = "127.0.0.1:8081"
+	}
+
+	log.Printf("Dummy Hospital A HIS listening on %s with %d patients", addr, len(patients))
+	log.Fatal(http.ListenAndServe(addr, newHandler()))
 }
 
 func newHandler() http.Handler {
