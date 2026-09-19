@@ -1,0 +1,25 @@
+# .dockerignore matches whole paths and `*` does not cross `/`, so anything that
+# can appear in a subdirectory needs an explicit `**/`.
+
+# Version control and agent tooling
+.git
+.gitignore
+.agents/
+
+# Secrets must never enter the build context, not even in a discarded stage.
+.env
+.env.*
+!.env.example
+
+# Build and live-reload output, at any depth
+bin/
+**/tmp/
+*.out
+coverage.html
+
+# Not needed to compile the binary
+Dockerfile
+.dockerignore
+docker-compose.yml
+Makefile
+**/*.md

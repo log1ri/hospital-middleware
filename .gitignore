@@ -1,0 +1,24 @@
+# Secrets. .env.example is the tracked template and must stay tracked.
+.env
+.env.*
+!.env.example
+
+# Build output
+bin/
+*.exe
+*.test
+
+# Air / live-reload scratch directory
+tmp/
+
+# Coverage and profiling output
+*.out
+coverage.html
+*.prof
+
+# Editor and OS noise
+.DS_Store
+.idea/
+*.swp
+
+AGENTS.md
