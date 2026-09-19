@@ -1,0 +1,28 @@
+# The nginx image renders every *.template in /etc/nginx/templates through
+# envsubst at startup, so APP_PORT stays the single source of truth for the port
+# the Go service listens on. Only that variable is substituted; nginx's own
+# $host and $remote_addr survive because no such environment variables exist.
+
+server {
+    listen 80;
+    server_name _;
+
+    # Patient records are small JSON documents; a request body larger than this
+    # is a mistake rather than a payload worth forwarding.
+    client_max_body_size 1m;
+
+    location / {
+        proxy_pass http://app:${APP_PORT};
+
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # The middleware calls an external HIS on the search path, so the read
+        # timeout has to outlast the client's own 10s upstream timeout.
+        proxy_connect_timeout 5s;
+        proxy_send_timeout    30s;
+        proxy_read_timeout    30s;
+    }
+}

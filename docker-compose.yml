@@ -1,4 +1,19 @@
 services:
+  # The only service published to the host: everything reaches the API through
+  # nginx, so the reverse proxy is actually exercised rather than bypassed.
+  nginx:
+    image: nginx:1.29-alpine
+    environment:
+      APP_PORT: ${APP_PORT:-8080}
+    volumes:
+      - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:80"
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
   app:
     build:
       context: .
@@ -10,8 +25,9 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-staff}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-hospital}
       HOSPITAL_A_BASE_URL: http://his-a-dummy:8081
-    ports:
-      - "127.0.0.1:${APP_PORT:-8080}:${APP_PORT:-8080}"
+    # Reached through nginx only, so the port stays inside the compose network.
+    expose:
+      - "${APP_PORT:-8080}"
     depends_on:
       postgres:
         condition: service_healthy
